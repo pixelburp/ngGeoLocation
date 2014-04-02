@@ -1,19 +1,8 @@
 (function(window, angular) {
   'use strict';
 
-  var ngGeoLocation = angular.module('ngGeoLocation', []);
-
-  ngGeoLocation.service('geoLocation', function () {
-    return {
-      init: function() {
-        if(!navigator.geolocation || !google || !google.maps) {
-          return false;
-        }
-        this.getPosition();
-      },
-
-      getCountry: function(results) {
-        console.log(results);
+  var ngGeoLocation = angular.module('ngGeoLocation', []),
+      getCountry = function(results) {
         var i = 0,
             length = results[0].address_components.length;
 
@@ -26,6 +15,21 @@
             return shortName ? shortName : longName;
           }
         }
+      };
+
+  ngGeoLocation.service('geoLocation', function ($rootScope) {
+    return {
+      countryCode: '',
+
+      init: function() {
+        if(!navigator.geolocation || !google || !google.maps) {
+          return false;
+        }
+        this.getPosition();
+      },
+
+      isUkLocation: function() {
+        return this.countryCode === 'GB';
       },
 
       getPosition: function() {
@@ -34,16 +38,16 @@
             coords;
 
         navigator.geolocation.getCurrentPosition(function(position) {
-          console.log(position);
           coords = new google.maps.LatLng(
             position.coords.latitude, position.coords.longitude
           );
 
           geocoder.geocode({ latLng: coords }, function(results, status) {
-            if(status == google.maps.GeocoderStatus.OK) {
+            if(status === google.maps.GeocoderStatus.OK) {
               if(results[0]) {
-                //var loc = getCountry(results);
-                console.log(self.getCountry(results));
+                $rootScope.$apply(function() {
+                  self.countryCode = getCountry(results);
+                });
               }
             }
           });        
